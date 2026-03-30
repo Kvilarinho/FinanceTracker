@@ -1,0 +1,26 @@
+[
+  {
+    "Id": "357af501-6569-4733-a43a-2d6c343500a0",
+    "Description": "Medication",
+    "Amount": 25,
+    "Category": 3,
+    "Date": "2026-03-30T12:24:43.33479+01:00",
+    "Type": 1
+  },
+  {
+    "Id": "8d96191b-4515-46bb-a1e2-e8d9ea3e2824",
+    "Description": "Grocery",
+    "Amount": 100,
+    "Category": 0,
+    "Date": "2026-03-30T12:25:57.587722+01:00",
+    "Type": 1
+  },
+  {
+    "Id": "3b901526-7b32-4567-a22d-7738f0a3588f",
+    "Description": "Salary",
+    "Amount": 1500,
+    "Category": 5,
+    "Date": "2026-03-30T12:26:51.7366464+01:00",
+    "Type": 0
+  }
+]

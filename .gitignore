@@ -1,0 +1,39 @@
+# .gitignore for C# .NET projects
+# Build results
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code settings
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# NuGet packages
+*.nupkg
+# Package directories can be ignored if using package restore
+**/packages/*
+!**/packages/build/
+!**/packages/repositories.config
+
+# Logs
+*.log
+
+# Others
+*.vspscc
+*.vssscc
+_ReSharper*/
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+
+# Rider
+.idea/
+*.sln.iml
