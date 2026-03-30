@@ -30,23 +30,23 @@ public class TransactionService : ITransactionService
 
     public IEnumerable<Transaction> GetAll()
     {
-        return _repository.getAll();
+        return _repository.GetAll();
     }
 
     public IEnumerable<Transaction> GetByMonth(int year, int month)
     {
-        return _repository.getAll()
+        return _repository.GetAll()
             .Where(t => t.Date.Year == year && t.Date.Month == month);
     }
 
     public IEnumerable<Transaction> GetByCategory(CategoryType category)
     {
-        return _repository.getAll().Where(t => t.Category == category);
+        return _repository.GetAll().Where(t => t.Category == category);
     }
 
     public decimal GetTotalByType(TransactionType type)
     {
-        return _repository.getAll()
+        return _repository.GetAll()
             .Where(t => t.Type == type)
             .Sum(t => t.Amount);
     }

@@ -30,7 +30,7 @@ public class TransactionRepository : ITransactionRepository
         _transactions.Add(transaction);
     }
 
-    public IEnumerable<Transaction> getAll()
+    public IEnumerable<Transaction> GetAll()
     {
         return _transactions;
     }

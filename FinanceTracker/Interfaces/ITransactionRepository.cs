@@ -7,5 +7,5 @@ public interface ITransactionRepository
 {
     void Add(Transaction transaction);
     void Remove(Guid id);
-    IEnumerable<Transaction> getAll();
+    IEnumerable<Transaction> GetAll();
 }
