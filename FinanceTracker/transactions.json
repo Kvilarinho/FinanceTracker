@@ -22,5 +22,21 @@
     "Category": 5,
     "Date": "2026-03-30T12:26:51.7366464+01:00",
     "Type": 0
+  },
+  {
+    "Id": "5064468e-109a-44e2-b143-dedc245734cc",
+    "Description": "House",
+    "Amount": 550,
+    "Category": 2,
+    "Date": "2026-04-06T18:11:14.4356861+01:00",
+    "Type": 1
+  },
+  {
+    "Id": "b48727c2-4c46-4699-b317-305a9daaf7fd",
+    "Description": "Phone",
+    "Amount": 50,
+    "Category": 6,
+    "Date": "2026-04-06T18:12:01.7358854+01:00",
+    "Type": 1
   }
 ]

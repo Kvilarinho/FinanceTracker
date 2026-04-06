@@ -53,8 +53,7 @@ while (running)
                 break;
             }
 
-            service.AddTransaction(description, amount, category, type);
-            await repository.SaveToFileAsync();
+            await service.AddTransaction(description, amount, category, type);
             Console.WriteLine("Transaction added");
             break;
 
@@ -68,8 +67,7 @@ while (running)
 
             try
             {
-                service.RemoveTransaction(id);
-                await repository.SaveToFileAsync();
+                await service.RemoveTransaction(id);
                 Console.WriteLine("Transaction removed");
             }
             catch (KeyNotFoundException e)
@@ -105,9 +103,12 @@ while (running)
         case "5":
             Console.Write("Year: ");
             if (!int.TryParse(Console.ReadLine(), out var year)) break;
+
             Console.Write("Month: ");
             if (!int.TryParse(Console.ReadLine(), out var month)) break;
+
             var byMonth = service.GetByMonth(year, month);
+            
             foreach (var t in byMonth)
                 Console.WriteLine($"{t.Date:dd/MM/yyyy} | {t.Type} | {t.Amount:C} | {t.Description}");
             break;

@@ -14,9 +14,15 @@ public class TransactionService : ITransactionService
         _repository = repository;
     }
 
-    public void AddTransaction(string description, decimal amount, 
+    public async Task AddTransaction(string description, decimal amount, 
                                 CategoryType category, TransactionType type)
     {
+        if (string.IsNullOrWhiteSpace(description))
+            throw new ArgumentException("Description cannot be empty");
+
+        if (amount <= 0)
+            throw new ArgumentException("Amount must be greater than zero");
+
         var transaction = new Transaction(
             Guid.NewGuid(),
             description,
@@ -25,7 +31,16 @@ public class TransactionService : ITransactionService
             DateTime.Now,
             type
         );
-        _repository.Add(transaction);
+
+        try {
+            _repository.Add(transaction);
+            await _repository.SaveToFileAsync();
+        } 
+        catch 
+        {
+            _repository.Remove(transaction.Id);
+            throw;
+        }
     }
 
     public IEnumerable<Transaction> GetAll()
@@ -35,6 +50,12 @@ public class TransactionService : ITransactionService
 
     public IEnumerable<Transaction> GetByMonth(int year, int month)
     {
+        if (month < 1 || month > 12)
+            throw new ArgumentException("Invalid month");
+
+        if (year < 1)
+            throw new ArgumentException("Invalid year");
+
         return _repository.GetAll()
             .Where(t => t.Date.Year == year && t.Date.Month == month);
     }
@@ -51,8 +72,21 @@ public class TransactionService : ITransactionService
             .Sum(t => t.Amount);
     }
 
-    public void RemoveTransaction(Guid id)
+    public async Task RemoveTransaction(Guid id)
     {
-        _repository.Remove(id);
+        var transaction = _repository.GetAll().FirstOrDefault(t => t.Id == id) 
+            ?? throw new KeyNotFoundException($"Transaction {id} not found");
+
+        try 
+        {
+            _repository.Remove(id);
+            await _repository.SaveToFileAsync();
+        }
+        catch 
+        {
+            _repository.Add(transaction);
+            throw;
+        }
+        
     }
 }

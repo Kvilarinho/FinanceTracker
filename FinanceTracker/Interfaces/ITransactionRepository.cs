@@ -6,6 +6,13 @@ namespace FinanceTracker.Interfaces;
 public interface ITransactionRepository
 {
     void Add(Transaction transaction);
+
     void Remove(Guid id);
+
     IEnumerable<Transaction> GetAll();
+
+    Task LoadFromFileAsync();
+
+    Task SaveToFileAsync();
+    
 }
