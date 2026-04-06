@@ -20,15 +20,20 @@ public class TransactionServiceTests
     }
 
     [Fact]
-    public void AddTransaction_ShouldCallRepositoryAdd()
+    public async Task AddTransaction_ShouldCallRepositoryAdd()
     {
         // Arrange
+
         _repositoryMock
             .Setup(r => r.GetAll())
             .Returns(new List<Transaction>());
 
+        _repositoryMock
+            .Setup(r => r.SaveToFileAsync())
+            .Returns(Task.CompletedTask);
+
         // Act
-        _service.AddTransaction("Salary", 1000m, CategoryType.Salary, TransactionType.Income);
+        await _service.AddTransaction("Salary", 1000m, CategoryType.Salary, TransactionType.Income);
 
         // Assert
         _repositoryMock.Verify(r => r.Add(It.IsAny<Transaction>()), Times.Once);
@@ -105,7 +110,7 @@ public class TransactionServiceTests
     }
 
     [Fact]
-    public void RemoveTransaction_ShouldRemoveTransaction()
+    public async Task RemoveTransaction_ShouldRemoveTransaction()
     {
         // Arrange
         var transactions = new List<Transaction>
@@ -119,15 +124,19 @@ public class TransactionServiceTests
             .Setup(r => r.GetAll())
             .Returns(transactions);
 
+        _repositoryMock
+            .Setup(r => r.SaveToFileAsync())
+            .Returns(Task.CompletedTask);
+
         // Act
-        _service.RemoveTransaction(transactions[1].Id);
+        await _service.RemoveTransaction(transactions[1].Id);
 
         // Assert
         _repositoryMock.Verify(r => r.Remove(transactions[1].Id), Times.Once);
     }
 
     [Fact]
-    public void RemoveTransaction_WithoutIdShouldThrowKeyNotFoundException()
+    public async Task RemoveTransaction_WithoutIdShouldThrowKeyNotFoundException()
     {
         // Arrange
         _repositoryMock
@@ -135,7 +144,7 @@ public class TransactionServiceTests
             .Throws<KeyNotFoundException>();
 
         // Act & Assert
-        Assert.Throws<KeyNotFoundException>(() =>
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _service.RemoveTransaction(Guid.NewGuid()));
 
     }

@@ -53,3 +53,49 @@ FinanceTracker/
 - Unit tests for `TransactionRepository`
 - A monthly summary with top 3 expenses using LINQ
 - Dependency injection container instead of manual wiring in `Program.cs`
+
+## Save to File: Automatic vs Manual
+
+Currently, the application calls `SaveToFileAsync` automatically after every change (add/remove). This ensures that data is always persisted immediately, reducing the risk of data loss if the app crashes.
+
+**Trade-offs:**
+- **Pros:**
+  - Simplicity: No need to track unsaved changes or manage a 'dirty' state.
+  - Data safety: Every operation is atomic from the user's perspective; changes are never lost if the app exits unexpectedly.
+- **Cons:**
+  - Performance: For large datasets or frequent operations, saving after every change can be slow.
+  - Flexibility: Harder to implement batch operations or 'undo' functionality, since every change is persisted right away.
+
+## Manual Atomicity Handling
+
+To ensure atomicity in write operations (add/remove), the service uses a try/catch block: all changes are made in memory first, and only then persisted with `SaveToFileAsync`. If an exception occurs during saving, the previous state is restored (manual rollback), reverting any changes made to the in-memory list.
+
+**Advantages:**
+- Simulates transactions even without a database
+- Prevents inconsistencies if saving fails
+
+**Limitations:**
+- Rollback only works while the application is running (does not cover power loss or crashes between operations)
+- Not thread-safe and does not handle concurrent scenarios
+
+This approach is sufficient for a simple CLI, but in larger systems it's recommended to use real database transactions.
+
+## Thread Safety and Robustness
+
+The repository now uses a lock (`_lock`) to ensure thread safety for all operations that access or modify the in-memory transaction list. This prevents race conditions and data corruption when multiple threads interact with the repository.
+
+- **Async and Lock:**
+  - Asynchronous file operations (`LoadAsync`, `SaveAsync`) are performed outside the lock to avoid deadlocks and blocking the thread.
+  - The lock is used only to protect quick, in-memory operations (like adding, removing, or copying the list).
+
+- **Data Exposure:**
+  - The `GetAll()` method returns a read-only copy of the transaction list, preventing external modification.
+
+- **Duplicate Prevention:**
+  - The list is cleared before loading new transactions from file, avoiding duplicates if loading occurs multiple times.
+
+- **Error Handling:**
+  - File operations are wrapped in try/catch blocks and throw IOExceptions with context if they fail, making error sources clearer.
+
+This approach is robust for a CLI app and demonstrates best practices for combining async, locking, and file IO in C#.
+
