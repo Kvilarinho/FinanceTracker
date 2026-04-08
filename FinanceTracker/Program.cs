@@ -7,7 +7,14 @@ var repository = new TransactionRepository(fileStorage);
 var service = new TransactionService(repository);
 
 
-await repository.LoadFromFileAsync();
+try
+{
+    await repository.LoadFromFileAsync();
+}
+catch (IOException ex)
+{
+    Console.WriteLine($"Warning: could not load transactions from file. {ex.Message}");
+}
 
 Console.WriteLine("=== Finance Tracker ===");
 
@@ -53,8 +60,19 @@ while (running)
                 break;
             }
 
-            await service.AddTransaction(description, amount, category, type);
-            Console.WriteLine("Transaction added");
+            try
+            {
+                await service.AddTransaction(description, amount, category, type);
+                Console.WriteLine("Transaction added");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Invalid input: {ex.Message}");
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine($"Failed to save transaction: {ex.Message}");
+            }
             break;
 
         case "2":
@@ -107,10 +125,16 @@ while (running)
             Console.Write("Month: ");
             if (!int.TryParse(Console.ReadLine(), out var month)) break;
 
-            var byMonth = service.GetByMonth(year, month);
-            
-            foreach (var t in byMonth)
-                Console.WriteLine($"{t.Date:dd/MM/yyyy} | {t.Type} | {t.Amount:C} | {t.Description}");
+            try
+            {
+                var byMonth = service.GetByMonth(year, month);
+                foreach (var t in byMonth)
+                    Console.WriteLine($"{t.Date:dd/MM/yyyy} | {t.Type} | {t.Amount:C} | {t.Description}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Invalid input: {ex.Message}");
+            }
             break;
 
         case "6":
