@@ -53,7 +53,7 @@ public class TransactionService : ITransactionService
         if (month < 1 || month > 12)
             throw new ArgumentException("Invalid month");
 
-        if (year < 1)
+        if (year < 2000)
             throw new ArgumentException("Invalid year");
 
         return _repository.GetAll()

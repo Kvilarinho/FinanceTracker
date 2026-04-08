@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 
@@ -7,9 +8,8 @@ namespace FinanceTracker.Repositories;
 
 public class TransactionRepository : ITransactionRepository
 {
-    private readonly List<Transaction> _transactions = new();
+    private readonly ConcurrentDictionary<Guid, Transaction> _transactions = new();
     private readonly IFileStorageService _fileStorageService;
-    private readonly object _lock = new();
 
     public TransactionRepository(IFileStorageService fileStorageService)
     {
@@ -23,11 +23,9 @@ public class TransactionRepository : ITransactionRepository
         {
             var transactions = await _fileStorageService.LoadAsync();
 
-            lock (_lock)
-            {
-                _transactions.Clear(); // Avoid duplicates if called more than once
-                _transactions.AddRange(transactions);
-            }
+            _transactions.Clear();
+            foreach (var transaction in transactions)
+                _transactions.TryAdd(transaction.Id, transaction);
         }
         catch (Exception ex)
         {
@@ -38,14 +36,9 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task SaveToFileAsync()
     {
-        List<Transaction> snapshot;
-        
-        lock (_lock)
-        {
-            snapshot = _transactions.ToList(); // Copy for thread safety
-        }
         try
         {
+            var snapshot = _transactions.Values.ToList();
             await _fileStorageService.SaveAsync(snapshot);
         }
         catch (Exception ex)
@@ -57,31 +50,21 @@ public class TransactionRepository : ITransactionRepository
 
     public void Add(Transaction transaction)
     {
-        lock (_lock)
-        {
-            _transactions.Add(transaction);
-        }
+        if (!_transactions.TryAdd(transaction.Id, transaction))
+            throw new InvalidOperationException($"Transaction {transaction.Id} already exists.");
     }
 
 
     public IEnumerable<Transaction> GetAll()
     {
-        lock (_lock)
-        {
-            return _transactions.ToList().AsReadOnly();
-        }
+        return _transactions.Values.ToList().AsReadOnly();
     }
 
 
     public void Remove(Guid id)
     {
-        lock (_lock)
-        {
-            var transaction = _transactions.FirstOrDefault(t => t.Id == id)
-                ?? throw new KeyNotFoundException($"Transaction {id} not found");
-                
-            _transactions.Remove(transaction);
-        }
+        if (!_transactions.TryRemove(id, out _))
+            throw new KeyNotFoundException($"Transaction {id} not found.");
     }
 
 }
