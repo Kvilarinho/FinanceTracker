@@ -112,7 +112,7 @@ public class ConsoleUI(ITransactionService service)
 
     private void HandleListAll()
     {
-        var transactions = _service.GetAll().ToList();
+        var transactions = _service.GetAll();
 
         if (!transactions.Any())
         {
@@ -133,7 +133,7 @@ public class ConsoleUI(ITransactionService service)
             return;
         }
 
-        var results = _service.GetByCategory(category).ToList();
+        var results = _service.GetByCategory(category);
 
         if (!results.Any())
         {
@@ -163,7 +163,7 @@ public class ConsoleUI(ITransactionService service)
 
         try
         {
-            var results = _service.GetByMonth(year, month).ToList();
+            var results = _service.GetByMonth(year, month);
 
             if (!results.Any())
             {

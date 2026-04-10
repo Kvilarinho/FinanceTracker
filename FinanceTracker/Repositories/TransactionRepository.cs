@@ -24,8 +24,13 @@ public class TransactionRepository : ITransactionRepository
             var transactions = await _fileStorageService.LoadAsync();
 
             _transactions.Clear();
+
             foreach (var transaction in transactions)
-                _transactions.TryAdd(transaction.Id, transaction);
+            {
+                if (!_transactions.TryAdd(transaction.Id, transaction))
+                    throw new InvalidOperationException($"Duplicate transaction ID {transaction.Id} found in file.");
+            }
+                
         }
         catch (Exception ex)
         {
@@ -57,7 +62,7 @@ public class TransactionRepository : ITransactionRepository
 
     public IEnumerable<Transaction> GetAll()
     {
-        return _transactions.Values.ToList().AsReadOnly();
+        return _transactions.Values.ToList();
     }
 
 

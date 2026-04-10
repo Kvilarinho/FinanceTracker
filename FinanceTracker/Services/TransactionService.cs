@@ -8,13 +8,14 @@ namespace FinanceTracker.Services;
 public class TransactionService : ITransactionService
 {
     private readonly ITransactionRepository _repository;
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public TransactionService(ITransactionRepository repository)
     {
         _repository = repository;
     }
 
-    public async Task AddTransaction(string description, decimal amount, 
+    public async Task AddTransaction(string description, decimal amount,
                                 CategoryType category, TransactionType type)
     {
         if (string.IsNullOrWhiteSpace(description))
@@ -27,25 +28,31 @@ public class TransactionService : ITransactionService
             Guid.NewGuid(),
             description,
             amount,
-            category, 
+            category,
             DateTime.Now,
             type
         );
 
-        try {
+        await _semaphore.WaitAsync();
+        try
+        {
             _repository.Add(transaction);
             await _repository.SaveToFileAsync();
-        } 
-        catch 
+        }
+        catch
         {
-            _repository.Remove(transaction.Id);
+            try { _repository.Remove(transaction.Id); } catch { }
             throw;
+        }
+        finally
+        {
+            _semaphore.Release();
         }
     }
 
     public IEnumerable<Transaction> GetAll()
     {
-        return _repository.GetAll();
+        return _repository.GetAll().OrderByDescending(t => t.Date).ToList();
     }
 
     public IEnumerable<Transaction> GetByMonth(int year, int month)
@@ -57,7 +64,9 @@ public class TransactionService : ITransactionService
             throw new ArgumentException("Invalid year");
 
         return _repository.GetAll()
-            .Where(t => t.Date.Year == year && t.Date.Month == month);
+            .Where(t => t.Date.Year == year && t.Date.Month == month)
+            .OrderByDescending(t => t.Date)
+            .ToList();
     }
 
     public IEnumerable<Transaction> GetByCategory(CategoryType category)
@@ -74,19 +83,27 @@ public class TransactionService : ITransactionService
 
     public async Task RemoveTransaction(Guid id)
     {
-        var transaction = _repository.GetAll().FirstOrDefault(t => t.Id == id) 
-            ?? throw new KeyNotFoundException($"Transaction {id} not found");
 
-        try 
+        Transaction? transaction = null;
+
+        await _semaphore.WaitAsync();
+        try
         {
+            transaction = _repository.GetAll().FirstOrDefault(t => t.Id == id)
+                ?? throw new KeyNotFoundException($"Transaction {id} not found");
+
             _repository.Remove(id);
             await _repository.SaveToFileAsync();
         }
-        catch 
+        catch when (transaction is not null)
         {
-            _repository.Add(transaction);
+            try { _repository.Add(transaction); } catch { }
             throw;
         }
-        
+        finally
+        {
+            _semaphore.Release();
+        }
+
     }
 }
