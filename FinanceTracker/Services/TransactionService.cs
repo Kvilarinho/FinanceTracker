@@ -24,6 +24,12 @@ public class TransactionService : ITransactionService
         if (amount <= 0)
             throw new ArgumentException("Amount must be greater than zero");
 
+        if (!Enum.IsDefined(typeof(CategoryType), category))
+            throw new ArgumentException("Invalid category");
+        
+        if (!Enum.IsDefined(typeof(TransactionType), type))
+            throw new ArgumentException("Invalid transaction type");
+
         var transaction = new Transaction(
             Guid.NewGuid(),
             description,
