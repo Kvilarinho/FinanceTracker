@@ -23,11 +23,6 @@ public class TransactionServiceTests
     public async Task AddTransaction_ShouldCallRepositoryAdd()
     {
         // Arrange
-
-        _repositoryMock
-            .Setup(r => r.GetAll())
-            .Returns(new List<Transaction>());
-
         _repositoryMock
             .Setup(r => r.SaveToFileAsync())
             .Returns(Task.CompletedTask);
@@ -140,8 +135,8 @@ public class TransactionServiceTests
     {
         // Arrange
         _repositoryMock
-            .Setup(r => r.Remove(It.IsAny<Guid>()))
-            .Throws<KeyNotFoundException>();
+            .Setup(r => r.GetAll())
+            .Returns(new List<Transaction>());
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
