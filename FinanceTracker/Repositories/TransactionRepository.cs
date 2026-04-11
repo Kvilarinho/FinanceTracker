@@ -23,22 +23,24 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task LoadFromFileAsync()
     {
+        List<Transaction> transactions;
+        try
+        {
+            transactions = await _fileStorageService.LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new IOException("Failed to load transactions from file.", ex);
+        }
         _lock.EnterWriteLock();
         try
         {
-            var transactions = await _fileStorageService.LoadAsync();
-
             _transactions.Clear();
-
             foreach (var transaction in transactions)
             {
                 if (!_transactions.TryAdd(transaction.Id, transaction))
                     throw new InvalidOperationException($"Duplicate transaction ID {transaction.Id} found in file.");
             }
-        }
-        catch (Exception ex)
-        {
-            throw new IOException("Failed to load transactions from file.", ex);
         }
         finally
         {
@@ -49,20 +51,24 @@ public class TransactionRepository : ITransactionRepository
 
     public async Task SaveToFileAsync()
     {
-        // Save snapshot with read lock: allows parallel reads but prevents concurrent writes during snapshot
-        _lock.EnterReadLock(); // snapshot is safe with a read lock; writes will block.
+        // Collect snapshot safely, then persist it after releasing the lock
+        List<Transaction> snapshot;
+        _lock.EnterReadLock(); // Only reading, allows concurrent reads.
         try
         {
-            var snapshot = _transactions.Values.ToList();
+            snapshot = _transactions.Values.ToList();
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+        try
+        {
             await _fileStorageService.SaveAsync(snapshot);
         }
         catch (Exception ex)
         {
             throw new IOException("Failed to save transactions to file.", ex);
-        }
-        finally
-        {
-            _lock.ExitReadLock();
         }
     }
 

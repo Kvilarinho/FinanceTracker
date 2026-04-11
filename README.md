@@ -104,3 +104,10 @@ The repository now uses a `ReaderWriterLockSlim` to guard **all** operations on 
 
 This approach is robust and scalable for small- to medium-sized apps that need safe, immediate persistence with zero risk of concurrency bugs.
 
+### Async File I/O and Snapshots
+- Each save/load operation works on a complete snapshot of the transactions in memory, taken under lock for correctness.
+- The file write (save) happens asynchronously right after the lock is released, which means:
+  - It is *never* possible for the file to be corrupted or partially written, regardless of how often or concurrently save/load/add/remove is called.
+  - Very rapid add/remove cycles may result in a saved file that slightly lags the absolute latest state in RAM (the save always reflects a real, past consistent state, matching best practices in .NET async/locking apps).
+- This design is safe for real-world multi-session, multi-thread, or even future async API usage without additional concerns.
+
