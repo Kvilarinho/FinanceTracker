@@ -83,24 +83,24 @@ This approach is sufficient for a simple CLI, but in larger systems it's recomme
 
 ## Thread Safety and Robustness
 
-The repository uses `ConcurrentDictionary<Guid, Transaction>` instead of a `List<Transaction>` with a manual lock. This provides built-in thread safety through fine-grained internal locking, without requiring explicit `lock` blocks throughout the code.
+The repository now uses a `ReaderWriterLockSlim` to guard **all** operations on in-memory and file storage. This means:
 
-- **No manual lock needed:**
-  - `TryAdd`, `TryRemove`, and `Values` are all atomic operations; the dictionary handles synchronisation internally.
-  - Async file operations (`LoadAsync`, `SaveAsync`) are naturally outside any critical section.
+- **Full thread safety** for all operations:
+  - Multiple threads can safely list/query transactions concurrently.
+  - All mutation operations (add, remove, load-from-file, save-to-file) are exclusive and never race.
+  - File reads/writes and in-memory mutations are always performed with the appropriate lock.
+- **Atomic snapshots:**
+  - `SaveToFileAsync` takes a consistent snapshot using a read-lock, blocking parallel mutations while reading but still allowing other snapshot reads.
+- **No partial reads/writes:**
+  - It's impossible for a load/save to overlap and cause file corruption or stale/incomplete reads, even if two UI sessions trigger them at the same time.
 
-- **Keyed by `Id`:**
-  - Storing transactions by `Guid` key makes lookups and removals O(1) instead of O(n) with `FirstOrDefault`.
-  - `TryAdd` also prevents duplicate `Id`s by design.
+**Design rationale:**
+- `ReaderWriterLockSlim` is the correct C# primitive when you want many readers but exclusive writers.
+- This pattern means it is now safe to access from many threads, or even from multiple UI tasks (or future API endpoints) with zero risk of data races or corruption.
+- All code is async/await friendly—locks only wrap minimal code and never cross thread boundaries.
 
-- **Data Exposure:**
-  - `GetAll()` returns a `ReadOnlyCollection` snapshot of `Values`, preventing external modification.
+**Error Handling:**
+- File and memory errors are reported with clear, specific exceptions (`IOException`, `KeyNotFoundException`, etc.), ensuring robust detection and diagnosability.
 
-- **Duplicate Prevention:**
-  - `_transactions.Clear()` followed by `TryAdd` on reload avoids duplicates if `LoadFromFileAsync` is called more than once.
-
-- **Error Handling:**
-  - File operations are wrapped in try/catch blocks and throw `IOException` with context if they fail, making error sources clearer.
-
-This approach is robust for a CLI app and demonstrates best practices for combining async, locking, and file IO in C#.
+This approach is robust and scalable for small- to medium-sized apps that need safe, immediate persistence with zero risk of concurrency bugs.
 

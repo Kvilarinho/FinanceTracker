@@ -8,7 +8,6 @@ namespace FinanceTracker.Services;
 public class TransactionService : ITransactionService
 {
     private readonly ITransactionRepository _repository;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     public TransactionService(ITransactionRepository repository)
     {
@@ -39,7 +38,6 @@ public class TransactionService : ITransactionService
             type
         );
 
-        await _semaphore.WaitAsync();
         try
         {
             _repository.Add(transaction);
@@ -49,10 +47,6 @@ public class TransactionService : ITransactionService
         {
             try { _repository.Remove(transaction.Id); } catch { }
             throw;
-        }
-        finally
-        {
-            _semaphore.Release();
         }
     }
 
@@ -92,7 +86,6 @@ public class TransactionService : ITransactionService
 
         Transaction? transaction = null;
 
-        await _semaphore.WaitAsync();
         try
         {
             transaction = _repository.GetAll().FirstOrDefault(t => t.Id == id)
@@ -105,10 +98,6 @@ public class TransactionService : ITransactionService
         {
             try { _repository.Add(transaction); } catch { }
             throw;
-        }
-        finally
-        {
-            _semaphore.Release();
         }
 
     }
